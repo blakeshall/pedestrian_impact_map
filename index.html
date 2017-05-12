@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html>
+<head>
+   <meta charset='utf-8' />
+    <title>Proposed Pedestrian and Traffic Safety Ordinance Impact</title>
+    <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+    <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.37.0/mapbox-gl.js'></script>
+    <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.37.0/mapbox-gl.css' rel='stylesheet' />
+
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/css/bootstrap.min.css">
+  <script src='https://npmcdn.com/@turf/turf/turf.min.js'></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+</head>
+<body>
+  <style>
+    body { }
+    .container { width: 100%;}
+    #map { height: 450px;}
+    #address-form {
+      margin-top: 20px;
+      margin-bottom: 10px;
+      width: 450px;
+      position: relative;
+      top: -20px;
+      z-index: 1000;
+      background: #FFF;
+      padding: 10px;
+      padding-left: 25px;
+    }
+    #form-row {
+      /*position: relative;*/
+      /*top: -60px;*/
+      height: 0;
+    }
+  </style>
+  <div class="container">
+    <div class='row'>
+      <div class='col-md-12'>
+        <h1 class='text-center'>Pedestrian and Traffic Safety Ordinance Impact</h1>
+      </div>
+    </div>
+
+    <div class='row'>
+      <div class='col-md-3'></div>
+      <div class='col-md-6'>
+        <p class='text-center'>A proposed ordinance going to the Lexington city council aims to curb panhandling in
+          the name of Pedestrian safety. This map is made hoping to illustrate the impact it will have.</p>
+        <p class='text-center'>
+          The main provision of the proposed ordinance deals with 75 specific roadways it deems "Arterial Roadways" and
+          200ft of any roadway that intersects them.
+          It prevents crossing these roadways anyplace other than a crosswalk or intersection. It also outlaws approaching
+          a car unless it is legally parked on the side of the road.
+        </p>
+      </div>
+    </div>
+
+    <div class='row'>
+      <div id='map' class='col-md-12'>
+      </div>
+    </div>
+    <div class='row'>
+      <div class='col-md-4'></div>
+      <div class='col-md-4'>
+        <form class="form">
+          <div class="form-group">
+            <label>
+              <input type="checkbox" checked id='arterial-show' /> Arterial Roadways (Green)
+            </label>
+            <p class="help-block">Shows the 75 proposed roadways deemed 'Arterial Roadways'</p>
+          </div>
+          <div class="form-group">
+            <label>
+              <input type="checkbox" checked id='buffer-show' /> Buffer Areas (Red)
+            </label>
+            <p class="help-block">Shows the 200ft buffer area of roads that intersect Arterial Roads*</p>
+          </div>
+        </form>
+      </div>
+    </div>
+    <div class='row'>
+      <div class='col-md-4'>
+      </div>
+      <div class='col-md-4'>
+        <p class='small'>(*) Due to the method used for rendering the buffer areas there are few extra sections
+          of road marked that are not in the 200ft buffer area. These are mostly noticeable downtown where other
+          streets are closer together. </p>
+      </div>
+    </div>
+
+
+  </div>
+  <script>
+    mapboxgl.accessToken = 'pk.eyJ1IjoiYmxha2VzaGFsbCIsImEiOiJRSkN3Y3prIn0.MfDnpigJE6CVbEsV0xwLfA';
+    var map = new mapboxgl.Map({
+        container: 'map', // container id
+        style: 'mapbox://styles/mapbox/light-v9', //stylesheet location
+        center: [-84.5,38.05], // starting position
+        zoom: 12 // starting zoom
+    });
+
+    // arterialRoadways = [
+    //   'ALBANY RD',
+    //   'ALEXANDRIA DR',
+    //   'ALUMNI DR',
+    //   'ARMSTRONG MILL RD',
+    //   'ATHENS BOONESBORO RD',
+    //   'AVENUE OF CHAMPIONS',
+    //   'BOLIVAR ST',
+    //   'BRIAR HILL RD',
+    //   'BRYAN AVE',
+    //   'BRYAN STATION RD',
+    //   'CHINOE RD',
+    //   'CITATION BLVD',
+    //   'CLAYS MILL RD',
+    //   'COOPER DR',
+    //   'CRESTWOOD DR',
+    //   'E FOURTH ST',
+    //   'W FOURTH ST',
+    //   'E HIGH ST',
+    //   'W HIGH ST',
+    //   'E LOUDON ST',
+    //   'W LOUDON ST',
+    //   'E MAIN ST',
+    //   'W MAIN ST',
+    //   'E MAXWELL ST',
+    //   'W MAXWELL ST',
+    //   'E NEW CIRCLE RD',
+    //   'W NEW CIRCLE RD',
+    //   'E NEW CIRCLE RAMP',
+    //   'W NEW CIRCL RAMP',
+    //   'E SHORT ST',
+    //   'W SHORT ST',
+    //   'E THIRD ST',
+    //   'W THIRD ST',
+    //   'E VINE ST',
+    //   'W VINE ST',
+    //   'ELM TREE LN',
+    //   'EUCLID AVE',
+    //   'FAIRWAY DR',
+    //   'FONTAINE RD',
+    //   'GEORGETOWN RD',
+    //   'GEORGETOWN ST',
+    //   'HARRODSBURG RD',
+    //   'HENRY CLAY BLVD',
+    //   'HOLIDAY RD',
+    //   'HUGUELET DR',
+    //   'JEFFERSON ST',
+    //   'JESSELIN DR',
+    //   'KEITHSHIRE WAY',
+    //   'LANE ALLEN RD',
+    //   'LEESTOWN RD',
+    //   'LIBERTY RD',
+    //   'MAN O WAR BLVD',
+    //   'MANCHESTER ST',
+    //   'MASON HEADLEY RD',
+    //   'MIDLAND AVE',
+    //   'N BROADWAY',
+    //   'S BROADWAY',
+    //   'N LIMESTONE',
+    //   'S LIMESTONE',
+    //   'NEWTOWN PIKE',
+    //   'NICHOLASVILLE RD',
+    //   'OLD FRANKFORT PIKE',
+    //   'OLD RICHMOND RD',
+    //   'OLIVER LEWIS WAY',
+    //   'PARIS PIKE',
+    //   'RACE ST',
+    //   'RED MILE RD',
+    //   'RICHMOND RD',
+    //   'ROSE ST',
+    //   'ROSEMONT GARDEN',
+    //   'RUSSELL CAVE RD',
+    //   'S ASHLAND AVE',
+    //   'S FORBES RD',
+    //   'S UPPER ST',
+    //   'SIR BARTON WAY',
+    //   'TATES CREEK RD',
+    //   'TODDS RD',
+    //   'VERSAILLES RD',
+    //   'VIRGINIA AVE',
+    //   'WEST REYNOLDS RD',
+    //   'WALLER AVE',
+    //   'WALTON AVE',
+    //   'WELLINGTON WAY',
+    //   'WILSON DOWNING RD',
+    //   'WINCHESTER RD',
+    //   'WINSLOW ST'
+    // ]
+
+    streetsURL = 'assets/data/streets.geojson'
+    bufferURL = 'assets/data/buffer_streets.geojson'
+    arterialURL = 'assets/data/arterial.geojson'
+    map.on('load', function(e){
+      map.addSource('streets', { type: 'geojson', data: streetsURL });
+      map.addSource('buffer', { type: 'geojson', data: bufferURL });
+      map.addSource('arterial', { type: 'geojson', data: arterialURL });
+      // map.getSource('streets').setData(url)
+      map.addLayer({
+          "id": "streets",
+          "type": "line",
+          "source": "streets",
+          "paint": {
+            "line-color": '#9d9d9d'
+          }
+      });
+
+      map.addLayer({
+          "id": "buffer",
+          "type": "line",
+          "source": "buffer",
+          "paint": {
+            "line-color": '#c40619',
+            "line-width": 2
+          }
+      });
+
+      map.addLayer({
+          "id": "arterial",
+          "type": "line",
+          "source": "arterial",
+          "paint": {
+            "line-color": '#06b429',
+            "line-width": 2
+          }
+      });
+
+      // filter = ['in', 'ROADNAME']
+
+      // map.setFilter('streets', filter.concat(arterialRoadways));
+    })
+
+    $('#arterial-show').click(function(e){
+      if ($('#arterial-show').prop('checked')){
+        map.addLayer({
+          "id": "arterial",
+          "type": "line",
+          "source": "arterial",
+          "paint": {
+            "line-color": '#06b429',
+            "line-width": 2
+          }
+        });
+      } else {
+        map.removeLayer('arterial');
+      }
+    });
+
+    $('#buffer-show').click(function(e){
+      if ($('#buffer-show').prop('checked')){
+        map.addLayer({
+          "id": "buffer",
+          "type": "line",
+          "source": "buffer",
+          "paint": {
+            "line-color": '#c40619',
+            "line-width": 2
+          }
+        });
+      } else {
+        map.removeLayer('buffer');
+      }
+    })
+
+  </script>
+
+</body>
+</html>
